@@ -1,0 +1,3 @@
+/Users/paigeknittel/Documents/simplify_expenses/build/CMakeFiles/main.dir
+/Users/paigeknittel/Documents/simplify_expenses/build/CMakeFiles/edit_cache.dir
+/Users/paigeknittel/Documents/simplify_expenses/build/CMakeFiles/rebuild_cache.dir

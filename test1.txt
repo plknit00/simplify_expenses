@@ -1,0 +1,5 @@
+5 people, 4 transactions.
+Remy owes Paige $10.
+Remy owes Clayton $100.
+Ollie owes Remy $8.
+Ollie owes Brittney $2000.
