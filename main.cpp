@@ -108,14 +108,17 @@ void maxflow(int source, int sink,
     // add to queue by checking all possible transactions curr_index
     // has with other indices, check no index is visited twice or else
     // loops and cycles are created
+    // is the looping correct ???
     for (int i = 0; i < transactions.size(); i++) {
       // somehow need to make sure visited incides is unique to each path?
       // how to store each path separately????
+      auto end = visited_indecies.end();
       bool index_not_found =
-          (std::find(visited_indecies, i) == visited_indecies.end());
+          (std::find(visited_indecies.begin(), end, i) == end);
       if ((transactions[curr_index][i] != 0) && (index_not_found)) {
         queue.push(i);
       }
+      // also check how sign of transaction amt comes into play
     }
   }
 }
