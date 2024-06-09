@@ -9,57 +9,137 @@
 #include <string>
 #include <vector>
 
-void maxflow(int source, int sink,
-             std::vector<std::vector<float>> &transactions,
-             std::vector<std::vector<float>> &residual_transactions) {
-  // will work as bfs between two edges and there cannot be
-  // cycles or repeatedly visited indecies within a path
-  std::vector<int> visited_indecies;
-  std::queue<int> queue;
-  int curr_index;
-  queue.push(source);
-  while (!queue.empty()) {
-    curr_index = queue.front();
-    visited_indecies.push_back(curr_index);
-    if (curr_index == sink) {
-      break;
-    }
-    // add to queue by checking all possible transactions curr_index
-    // has with other indices, check no index is visited twice
-    // within a path or else loops and cycles are created
-    // is the looping correct ???
-    for (int i = 0; i < transactions.size(); i++) {
-      // somehow need to make sure visited incides are unique to each path
-      // but not necessarily in general?
-      // how to store each path separately????
-      auto end = visited_indecies.end();
-      bool index_not_found =
-          (std::find(visited_indecies.begin(), end, i) == end);
-      if ((transactions[curr_index][i] != 0) && (index_not_found)) {
-        queue.push(i);
-      }
-      // also check how sign of transaction amount comes into play
-    }
-  }
+// should I use a different kind of pointer??
+// every node only has one parent pointer besides sink??
+// might work out ok though
+struct Node {
+  int index;
+  std::vector<Node *> children;
+  Node *parent;
+};
 
-  // step 1 dinics
-  //  find a blocking flow
-  //  dinic flow must be able to be undone
-  //  augmented graph
+// adds sink node to level graph if an edge for it exists
+// between the current element
+// returns true if edge exists in curr->sink direction, false otherwise
+bool next_node_is_sink(int curr_elt_index, int sink_index,
+                       std::vector<std::vector<float>> transactions,
+                       Node *&root) {
+  float curr_sink_trans_value;
+  // look if there exists edge between curr_elt and sink
+  if (curr_elt_index < sink_index) {
+    curr_sink_trans_value = transactions[curr_elt_index][sink_index];
+  } else {
+    curr_sink_trans_value = transactions[sink_index][curr_elt_index];
+  }
+  if (curr_sink_trans_value > 0) {
+    Node *child = new Node;
+    child->index = sink_index;
+    root->children.push_back(child);
+    return true;
+  }
+  return false;
 }
 
-std::vector<std::vector<float>> compute_residual(
+// can i make transactions const?
+// adds all edges from the current node where they owe someone else
+void add_edges(Node *parent, std::queue<Node *> &queue,
+               std::vector<std::vector<float>> transactions, Node *source) {
+  int size = transactions.size();
+  int parent_index = parent->index;
+  float amount;
+  for (int index = 0; index < size; index++) {
+    if (parent_index < index) {
+      amount = transactions[parent_index][index];
+    } else if (parent_index > index) {
+      amount = transactions[index][parent_index];
+    } else {
+      // case where parent_index = index
+      amount = 0;
+    }
+    // check that there exists nonzero edge between these nodes
+    if (amount > 0) {
+      // check that this is not looping back within its path
+      // not sure if this is the logic I want
+      bool repeat = false;
+      Node *ptr = parent;
+      while (ptr != nullptr || ptr->index != source->index) {
+        if (index == ptr->index) {
+          repeat = true;
+          break;
+        }
+        if (ptr->parent != nullptr) {
+          ptr = ptr->parent;
+        } else {
+          break;
+        }
+      }
+      if (!repeat) {
+        Node *child = new Node;
+        child->index = index;
+        parent->children.push_back(child);
+      }
+    }
+  }
+}
+
+void maxflow(int source_index, int sink_index,
+             std::vector<std::vector<float>> &transactions,
+             std::vector<std::vector<float>> &optimized_transactions) {
+  //  Step 1: use bfs to construct a level graph from source to sink
+  std::queue<Node *> queue;
+  std::vector<int> visited_indecies;
+  int size = transactions.size();
+  // initialize residual graph with depth 1 and root = source
+  int depth = 1;
+  Node *source = new Node;
+  source->index = source_index;
+  // queue.push(source);
+  // conduct bfs to create level graphs at increasing depths
+  // stop when the depth is equal to the number of people????
+  while (depth < size) {
+    // construct level graph of depth current depth
+    Node *curr_node;
+    int curr_index;
+    source->index = source_index;
+    queue.push(source);
+    // run bfs for a given depth
+    while (!queue.empty()) {
+      curr_node = queue.front();
+      curr_index = curr_node->index;
+      visited_indecies.push_back(curr_index);
+      if (depth > 1) {
+        add_edges(curr_node, queue, transactions, source);
+      }
+      /*for (int i = 0; i < transactions.size(); i++) {
+        auto end = visited_indecies.end();
+        bool index_not_found =
+            (std::find(visited_indecies.begin(), end, i) == end);
+        if ((transactions[curr_index][i] != 0) && (index_not_found)) {
+          queue.push(i);
+        }
+      }*/
+    }
+    next_node_is_sink(curr_index, sink_index, transactions, curr_node);
+    // find blocking flow on current graph
+    // update edges of transactions
+    // update new edges in opt_trans
+    depth++;
+  }
+}
+
+std::vector<std::vector<float>> compute_optimized_transactions(
     std::vector<std::vector<float>> transactions) {
-  std::vector<std::vector<float>> residual_transactions;
+  std::vector<std::vector<float>> optimized_transactions;
   int num_people = transactions.size();
-  // initialize residual transaction matrix to all zeros
-  transactions.reserve(num_people);
+  // initialize optimized transaction matrix to all zeros
+  // can make matrix initializer a helper function instead ******
+  optimized_transactions.reserve(num_people);
   for (int i = 0; i < num_people; i++) {
     std::vector<float> trans_row;
     trans_row.reserve(num_people);
-    transactions.push_back(trans_row);
+    optimized_transactions.push_back(trans_row);
     for (int j = 0; j < num_people; j++) {
-      transactions[i].push_back(0);
+      optimized_transactions[i].push_back(0);
     }
   }
 
@@ -83,12 +163,10 @@ std::vector<std::vector<float>> compute_residual(
         sink = temp;
       }
       // run dinic's maxflow algorithm
-      maxflow(source, sink, transactions, residual_transactions);
-      // float curr_trans_amount = transactions[source][sink];
+      maxflow(source, sink, transactions, optimized_transactions);
     }
   }
-
-  return residual_transactions;
+  return optimized_transactions;
 }
 
 void print_output(std::vector<std::string> names,

@@ -5,9 +5,11 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
-#include <queue>
 #include <string>
 #include <vector>
+
+// split up into smaller functions for testing
+//  somehow make float 2 decimal limit with rounding
 
 std::vector<std::vector<float>> read_input(std::string input_file,
                                            std::vector<std::string> &names) {
