@@ -18,7 +18,8 @@ bool next_node_is_sink(int source_index, int sink_index,
                        Node *&root);
 
 void add_edges(Node *parent, std::queue<Node *> &queue,
-               std::vector<std::vector<float>> transactions, Node *source);
+               std::vector<std::vector<float>> transactions, Node *source,
+               std::vector<int> visited_indecies);
 
 void maxflow(int source_index, int sink_index,
              std::vector<std::vector<float>> &transactions,

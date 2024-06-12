@@ -64,6 +64,10 @@
     "variant": "cpp",
     "vector": "cpp",
     "algorithm": "cpp",
-    "queue": "cpp"
+    "queue": "cpp",
+    "__tree": "cpp",
+    "cinttypes": "cpp",
+    "map": "cpp",
+    "set": "cpp"
   }
 }

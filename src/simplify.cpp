@@ -9,13 +9,27 @@
 #include <string>
 #include <vector>
 
+// abstract 2d vector trans matrix to a graph class
+// its ok that it just has one member variable
+// should be private
+// graph edges need to be able to be bidirectional and have different capacity
+//
+
+// can make nice gettter functions like
+// amount = graph.a_owes_b(index1, index2);
+
+// restructure matrix to not keep track of the boxes
+// that will always be empty (waste of space)
+
+// never use vec<vec>>, just use fancy math to index
+
 // should I use a different kind of pointer??
-// every node only has one parent pointer besides sink??
-// might work out ok though
 struct Node {
   int index;
+  // shared ptr children
   std::vector<Node *> children;
-  Node *parent;
+  // weak parents ptrs
+  std::vector<Node *> parents;
 };
 
 // adds sink node to level graph if an edge for it exists
@@ -43,11 +57,16 @@ bool next_node_is_sink(int curr_elt_index, int sink_index,
 // can i make transactions const?
 // adds all edges from the current node where they owe someone else
 void add_edges(Node *parent, std::queue<Node *> &queue,
-               std::vector<std::vector<float>> transactions, Node *source) {
+               std::vector<std::vector<float>> transactions, Node *source,
+               std::vector<int> visited_indecies) {
   int size = transactions.size();
   int parent_index = parent->index;
   float amount;
+  // abstraction a_owes_b
+  // does the weird cases for me (not in this function)
+  // a never owes a
   for (int index = 0; index < size; index++) {
+    // one case needs to be negated !!!!
     if (parent_index < index) {
       amount = transactions[parent_index][index];
     } else if (parent_index > index) {
@@ -59,21 +78,10 @@ void add_edges(Node *parent, std::queue<Node *> &queue,
     // check that there exists nonzero edge between these nodes
     if (amount > 0) {
       // check that this is not looping back within its path
-      // not sure if this is the logic I want
-      bool repeat = false;
-      Node *ptr = parent;
-      while (ptr != nullptr || ptr->index != source->index) {
-        if (index == ptr->index) {
-          repeat = true;
-          break;
-        }
-        if (ptr->parent != nullptr) {
-          ptr = ptr->parent;
-        } else {
-          break;
-        }
-      }
-      if (!repeat) {
+      int curr_index = parent->index;
+      auto repeat =
+          find(visited_indecies.begin(), visited_indecies.end(), curr_index);
+      if (repeat != visited_indecies.end()) {
         Node *child = new Node;
         child->index = index;
         parent->children.push_back(child);
@@ -86,45 +94,49 @@ void maxflow(int source_index, int sink_index,
              std::vector<std::vector<float>> &transactions,
              std::vector<std::vector<float>> &optimized_transactions) {
   //  Step 1: use bfs to construct a level graph from source to sink
-  std::queue<Node *> queue;
-  std::vector<int> visited_indecies;
   int size = transactions.size();
   // initialize residual graph with depth 1 and root = source
   int depth = 1;
-  Node *source = new Node;
+  // avoid new if possible
+  // use smart pointers instead to auto clean memory
+  std::shared_ptr<Node> source = std::make_shared<Node>();
   source->index = source_index;
-  // queue.push(source);
+  float new_edge_amt = 0;
   // conduct bfs to create level graphs at increasing depths
   // stop when the depth is equal to the number of people????
+  // when can we stop early??
+  // end when no more level graphs can be constructed to sink
+  // have level graph making function have some sort of fail that returns
+  // for this condition
   while (depth < size) {
-    // construct level graph of depth current depth
-    Node *curr_node;
+    // construct new level graph of depth current depth
+    new_edge_amt = 0;
+    std::queue<std::shared_ptr<Node>> queue;
+    std::vector<int> visited_indecies;
+    std::shared_ptr<Node> curr_node;
     int curr_index;
-    source->index = source_index;
     queue.push(source);
-    // run bfs for a given depth
+    // run bfs for a given depth to construct level graph
     while (!queue.empty()) {
       curr_node = queue.front();
       curr_index = curr_node->index;
       visited_indecies.push_back(curr_index);
       if (depth > 1) {
-        add_edges(curr_node, queue, transactions, source);
+        add_edges(curr_node, queue, transactions, source, visited_indecies);
       }
-      /*for (int i = 0; i < transactions.size(); i++) {
-        auto end = visited_indecies.end();
-        bool index_not_found =
-            (std::find(visited_indecies.begin(), end, i) == end);
-        if ((transactions[curr_index][i] != 0) && (index_not_found)) {
-          queue.push(i);
-        }
-      }*/
     }
     next_node_is_sink(curr_index, sink_index, transactions, curr_node);
     // find blocking flow on current graph
+    // update backward edges?
     // update edges of transactions
     // update new edges in opt_trans
-    depth++;
+    // depth++;
+    // lines 110 - 129 new function
+    //
   }
+  // add edge btw src and sink on opt mtrx by new_edge_amt
+  optimized_transactions[source_index][sink_index] += new_edge_amt;
+  // make sure orig trans mtrx is updates with lesser edge values
 }
 
 std::vector<std::vector<float>> compute_optimized_transactions(
@@ -144,15 +156,18 @@ std::vector<std::vector<float>> compute_optimized_transactions(
   }
 
   // row gives the person who owes money
-  for (int source = 0; source < num_people; source++) {
+  for (int source = 1; source < num_people - 1; source++) {
     // column gives the person who recieves money
     // sign of amount owed gives direction of edge
-    for (int sink = 0; sink < num_people; sink++) {
+    for (int sink = source + 1; sink < num_people; sink++) {
       // people don't need to pay themselves
       if (source == sink) {
+        // this case should never be reached, delete later
+        std::cout << "source = sink case, fix indecies" << std::endl;
         break;
       }
       int amount = transactions[source][sink];
+      // case where no edge exists, do nothing
       if (amount == 0) {
         break;
       }
