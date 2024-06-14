@@ -1,5 +1,6 @@
 #include "read_trans.h"
 
+#include "graph.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>

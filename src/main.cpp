@@ -1,3 +1,4 @@
+#include "graph.h"
 #include "read_trans.h"
 #include "simplify.h"
 #include <algorithm>
