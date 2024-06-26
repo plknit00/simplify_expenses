@@ -105,14 +105,19 @@ class Graph {
   // convert between [][] to vector indecies
   int index_convert(int source_index, int sink_index) {
     int transaction_index;
-    if (source_index < sink_index) {
-      int val1 = sink_index - 1;
-      // FIXXX ***********************************
-      int val2 = source_index * num_people;
-      transaction_index = val1 + val2;
-    } else {
-      transaction_index = ;
+    if (source_index > sink_index) {
+      int temp = source_index;
+      source_index = sink_index;
+      sink_index = temp;
     }
+    int val1 = 0;
+    if (source_index >= 0) {
+      for (int i = 1; i < source_index; i++) {
+        val1 += num_people - i;
+      }
+    }
+    int val2 = sink_index - 1;
+    transaction_index = val1 + val2;
     return transaction_index;
   }
 
