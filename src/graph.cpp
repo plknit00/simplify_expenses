@@ -107,6 +107,7 @@ int Graph::index_convert(int source_index, int sink_index) {
     int temp = source_index;
     source_index = sink_index;
     sink_index = temp;
+    // SOMEHOW HAVE TO FLIP SIGN HERE????
   }
   val1 = (source_index * (2 * num_people - source_index - 1)) / 2;
   transaction_index = val1 + sink_index - source_index - 1;
