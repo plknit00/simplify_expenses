@@ -1,5 +1,5 @@
 <h1>Simplify Expenses</h1>
-<h3>An algorithm to simplify expenses between a group of people over some event or period of time.</h3>
+<h3>An algorithm to simplify expenses between a group of people over some event or period of time inspired by the app Splitwise.</h3>
 <h5>https://medium.com/@mithunmk93/algorithm-behind-splitwises-debt-simplification-feature-8ac485e97688</h5>
 <h3>Good reference video explaining Dinic's algorithm:</h3>
 <h5>https://www.youtube.com/watch?v=M6cm8UeeziI</h5>
